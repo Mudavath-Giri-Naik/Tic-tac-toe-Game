@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            position: relative; /* To position the popup */
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            border: 2px solid #ccc;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            grid-gap: 10px;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 48px;
+            cursor: pointer;
+            background-color: #fff;
+        }
+
+        .cell:hover {
+            background-color: #eee;
+        }
+
+        .x {
+            color: #007bff;
+        }
+
+        .o {
+            color: #dc3545;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0069d9;
+        }
+
+        .popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            display: none; /* Initially hidden */
+            z-index: 10; /* Ensure it's on top */
+        }
+
+        .popup h2 {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tic Tac Toe</h1>
+        <div id="message">Player X's turn</div>
+        <div class="board" id="board"></div>
+
+        <button id="restartButton">Restart Game</button>
+        
+
+        <audio id="ticSound" src="tic.mp3"></audio>
+        <audio id="clapsSound" src="claps.mp3"></audio>
+
+        <div class="popup" id="winPopup">
+            <h2>Congratulations!</h2>
+            <p id="winMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        const board = document.getElementById('board');
+        const message = document.getElementById('message');
+        const restartButton = document.getElementById('restartButton');
+        const whoWonButton = document.getElementById('whoWonButton');
+        const ticSound = document.getElementById('ticSound');
+        const clapsSound = document.getElementById('clapsSound');
+        const winPopup = document.getElementById('winPopup');
+        const winMessage = document.getElementById('winMessage');
+        let currentPlayer = 'X';
+        let boardArray = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+        let winner = null; 
+
+        // Create cells for the board
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.addEventListener('click', () => {
+                handleClick(i);
+                ticSound.play(); 
+            });
+            board.appendChild(cell);
+        }
+
+        // Handle cell click
+        function handleClick(index) {
+            if (gameActive && boardArray[index] === '') {
+                boardArray[index] = currentPlayer;
+                updateBoard();
+                checkWin();
+                switchPlayer();
+            }
+        }
+
+        // Update the visual board
+        function updateBoard() {
+            const cells = board.querySelectorAll('.cell');
+            for (let i = 0; i < 9; i++) {
+                cells[i].textContent = boardArray[i];
+                if (boardArray[i] === 'X') {
+                    cells[i].classList.add('x');
+                } else if (boardArray[i] === 'O') {
+                    cells[i].classList.add('o');
+                }
+            }
+        }
+
+        // Switch player turn
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            message.textContent = `Player ${currentPlayer}'s turn`;
+        }
+
+        // Check for win conditions
+        function checkWin() {
+            const winConditions = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+                [0, 4, 8], [2, 4, 6]            // Diagonals
+            ];
+
+            for (const condition of winConditions) {
+                const [a, b, c] = condition;
+                if (boardArray[a] && boardArray[a] === boardArray[b] && boardArray[a] === boardArray[c]) {
+                    gameActive = false;
+                    winner = currentPlayer; 
+                    winMessage.textContent = `Player ${currentPlayer} wins!`;
+                    showWinPopup(); // Show the popup
+                    clapsSound.play(); 
+                    return;
+                }
+            }
+
+            // Check for a draw
+            if (boardArray.every(cell => cell !== '')) {
+                gameActive = false;
+                winMessage.textContent = 'Its a draw!';
+                showWinPopup(); // Show the popup
+                clapsSound.play(); 
+            }
+        }
+
+        // Show the win popup
+        function showWinPopup() {
+            winPopup.style.display = 'block';
+            setTimeout(() => {
+                winPopup.style.display = 'none'; // Hide after 5 seconds
+            }, 5000);
+        }
+
+        // Restart the game
+        function restartGame() {
+            currentPlayer = 'X';
+            boardArray = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            winner = null; 
+            message.textContent = 'Player Xs turn';
+            updateBoard();
+        }
+
+        // Display who won (or draw)
+        function showWhoWon() {
+            if (winner) {
+                message.textContent = `Player ${winner} won!`;
+            } else if (!gameActive) {
+                message.textContent = 'Its a draw!';
+            } else {
+                message.textContent = `Player ${currentPlayer}'s turn`; 
+            }
+        }
+
+        // Event listeners for buttons
+        restartButton.addEventListener('click', restartGame);
+        whoWonButton.addEventListener('click', showWhoWon);
+    </script>
+</body>
+</html>
